@@ -1,0 +1,400 @@
+---
+title: "Modeling and prediction for movies, Coursera Duke University"
+author: "Masoud Asgharian Rostami"
+date: "7/10/2019"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(corrplot)
+library(dplyr)
+library(ggplot2)
+library(shiny)
+library(statsr)
+library(tidyverse)
+library(knitr)
+library(rmarkdown)
+```
+
+### Load data
+
+```{r load-data}
+load("movies.Rdata")
+```
+
+
+## Part 1: Data
+
+The Movies data set include 651 cases (randomly sampled) and 32 variables.These movies are produced before 2016.
+This is a observational study not experiment (treatment and control) because all the variables are found in the
+websites or asked from people.These data are randomly colleected but not randomly assigned therfore association
+and correlation between the variables and movies interest can be idntified, however causation 
+relationship can not be achieved. In addition, because it is randomly selected it can be generlised to population.
+
+
+## Part 2: Research question
+
+What are the most important factors that impact the audience_score?
+
+
+## Part 3: Exploratory data analysis
+
+```{r Explore the data}
+dim(movies)
+str(movies)
+names(movies)
+summary(movies)
+```
+
+#### Remove missing values and select important variables
+
+```{r Remove missing values}
+movies2 <- na.omit(movies) %>% 
+  select (genre, runtime,studio,thtr_rel_month,imdb_rating, imdb_num_votes, critics_score,
+          critics_rating, audience_rating, audience_score, best_pic_nom, best_pic_win,best_actor_win,best_actress_win,
+          top200_box,director, actor1)
+
+head(movies2)
+dim(movies2)
+
+```
+
+
+#### Plot (Audience scores by genre) 
+
+```{r Audience scores by genre}
+ggplot(data=movies2, aes(x=genre, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle = 90, hjust = 1))+
+  ggtitle("Audience scores by genre")+xlab(" Genre ") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+
+It seems Musical&Performing Arts and Documentary have the highest Audience score.
+
+
+#### Plot (Audience scores vs Runtime of movie (in minutes)) 
+
+```{r Audience scores vs Runtime of movie}
+ggplot(data=movies2, aes(x=  runtime, y=audience_score))+geom_point(col="chocolate")+
+  ggtitle("Audience scores vs Runtime of movie")+xlab("Runtime of movie ") + ylab("Audience_score")+geom_smooth()
+```
+
+It seems there is relationship between Audience scores vs Runtime of movie.
+
+
+#### Plot (Audience scores vs IMDB rating by genre) 
+
+```{r Audience scores vs IMDB rating by genre}
+ggplot(data=movies2, aes(x=imdb_rating, y=audience_score))+geom_boxplot(col="chocolate")+ggtitle("Audience scores vs IMDB rating by genre")+xlab(" IMDB rating") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")+
+  facet_wrap(~genre)
+```
+It seems Musical&Performing Arts and Documentary have the highest Audience score and lowest range in box plot.
+
+
+
+#### Audience scores vs IMDB number of voters
+
+```{r Audience scores vs IMDB number of voters}
+ggplot(data=movies2, aes(x= imdb_num_votes, y=audience_score))+geom_point(col="chocolate")+theme(axis.text.x=element_text(angle = 90, hjust = 1))+
+  ggtitle("Audience scores vs IMDB number of voters")+xlab("IMDB number of voters ") + ylab("Audience_score")+geom_abline(lty="dashed")+geom_smooth()
+```
+
+It seems Audience scores vs IMDB number of voters have relatively positive correlation.
+
+
+#### Audience scores by Critics rating
+
+```{r Audience scores by Critics rating }
+ggplot(data=movies2, aes(x=critics_rating, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle = 90, hjust = 1))+
+  ggtitle("Audience scores by Critics rating")+xlab("Critics rating ") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+
+It shows critics rating with Certified Freash has the highest Audience scores.
+
+
+#### Audience scores by nominated for a best picture Oscar
+
+```{r Audience scores by nominated for a best picture Oscar}
+ggplot(data=movies2, aes(x=best_pic_nom, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle = 0, hjust = 1))+ggtitle("Audience scores by nominated for a best picture Oscar")+xlab("Nominated for a best picture Oscar") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+
+THe movies that by nominated for a best picture Oscar have the highest scores.
+
+
+#### Audience scores by movie won a best picture Oscar
+
+```{r Audience scores by movie won a best picture Oscar}
+ggplot(data=movies2, aes(x=best_pic_win, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle = 0, hjust = 1))+
+  ggtitle("Audience scores by movie won a best picture Oscar ")+xlab("Movie won a best picture Oscar") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+
+THe movies that won best picture of Oscar have the highest scores.
+
+
+#### Audience scores by  actors in the movie ever won an Oscar
+
+```{r Audience scores by  actors}
+ggplot(data=movies2, aes(x=best_actor_win, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle =0, hjust = 1))+
+  ggtitle("Audience scores by actors in the movie ever won an Oscar")+xlab("Actors in the movie ever won an Oscar") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+
+This boxplot show the audience scores between actors in the movie ever won an Oscar and not won the oscar is similar.
+
+
+#### Audience scores by actress in the movie ever won an Oscar
+
+```{r Audience scores by actress}
+ggplot(data=movies2, aes(x=best_actress_win, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle = 0, hjust = 1))+
+  ggtitle("Audience scores by actress in the movie ever won an Oscar")+xlab("Actress in the movie ever won an Oscar") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+This boxplot show the audience scores between actress in the movie ever won an Oscar and not won the oscar is similar.
+
+
+#### Audience scores by Whether or not the movie is in the Top 200 Box Office
+
+```{r Box Office}
+ggplot(data=movies2, aes(x= top200_box, y=audience_score))+geom_boxplot(col="chocolate")+theme(axis.text.x=element_text(angle = 0, hjust = 1))+
+  ggtitle("Audience scores by Whether or not the movie is in the Top 200 Box Office")+xlab("Whether or not the movie is in the Top 200 Box Office") + ylab("Audience_score")+geom_hline(yintercept=50, lty="dashed")
+```
+
+It seems movies in Top 200 Box Office have higher Audience scores.
+
+
+
+## Part 4: Modeling
+
+In this modeling project, 12 variables for the full model selected based on EPA. Backward model by using adjust R2 is going to apply to find the
+simplest and best model with less variables.
+
+
+#### 1) This is a first full model
+
+
+```{r Model1}
+model_full1<-lm(audience_score~genre+thtr_rel_month+imdb_rating+imdb_num_votes+ critics_score+ critics_rating+ audience_rating+ best_pic_nom+ best_pic_win+ top200_box+best_actor_win+best_actress_win, data=movies2)
+
+summary(model_full1)
+```
+linear model shows an  an adjusted R2 value of  0.8839.  This show ~88% of variability explain with these variables.
+
+
+#### 2) Remove veriable best_actress_win
+
+```{r Model2}
+model_2<-lm(audience_score~genre+thtr_rel_month+imdb_rating+imdb_num_votes+ critics_score+
+              critics_rating+ audience_rating+ best_pic_nom+ best_pic_win+ top200_box+best_actor_win, data=movies2)
+
+summary(model_2)
+```
+Adjusted R2 for model 1 is 0.8837 
+
+
+#### 3) Remove veriable best_pic_nom
+
+```{r Model3}
+model_3<-lm(audience_score~genre+thtr_rel_month+imdb_rating+imdb_num_votes+ critics_score+
+              critics_rating+ audience_rating+ best_pic_win+ top200_box+best_actor_win, data=movies2)
+
+summary(model_3)
+```
+Adjusted R2 for model 2 is  0.8831 
+
+
+#### 4) Remove veriable best_pic_win
+```{r Model4}
+model_4<-lm(audience_score~genre+thtr_rel_month+imdb_rating+imdb_num_votes+ critics_score+
+              critics_rating+ audience_rating+top200_box+best_actor_win, data=movies2)
+
+summary(model_4)
+```
+Adjusted R2 for model 2 is  0.8833 
+
+
+#### 5) Remove veriable imdb_num_votes
+
+```{r Model5}
+model_5<-lm(audience_score~genre+thtr_rel_month+imdb_rating+ critics_score+
+              critics_rating+ audience_rating+top200_box+best_actor_win, data=movies2)
+
+summary(model_5)
+```
+Adjusted R2 for model 2 is  0.8833 
+
+
+#### 6) Remove veriable thtr_rel_month
+```{r Model6}
+model_6<-lm(audience_score~genre+imdb_rating+ critics_score+
+              critics_rating+ audience_rating+top200_box+best_actor_win, data=movies2)
+summary(model_6)
+```
+Adjusted R2 for model 2 is  0.883 
+
+
+Based on the  Adjusted R2 for the models 2,3,4,5,6 the variables best_actress_win, best_pic_nom, best_pic_win, imdb_num_votes, thtr_rel_month
+are not great predictors for respond variable (audience_score) because Adjusted R2 remain similar for all these variables. Therfore, they removed from model.
+
+
+#### 7) Removing best_actor_win
+
+```{r Model7}
+model_7<-lm(audience_score~genre+imdb_rating+ critics_score+
+              critics_rating+ audience_rating+top200_box, data=movies2)
+
+summary(model_7)
+```
+Adjusted R2 for model 2 is   0.8832, so we can remove it fro model.
+
+
+#### 8) Removing critics_rating
+
+```{r Model8}
+model_8<-lm(audience_score~genre+imdb_rating+ critics_score+
+            audience_rating+top200_box, data=movies2)
+
+summary(model_8)
+```
+Adjusted R2 for model 2 is 0.8835, so we can remove it fro model.
+
+
+#### 9) Removing top200_box
+
+```{r Model9}
+model_9<-lm(audience_score~genre+imdb_rating+ critics_score+
+              audience_rating, data=movies2)
+
+summary(model_9)
+```
+Adjusted R2 for model 2 is   0.8837 so we can reomve it
+
+
+#### 10) Removing genre
+```{r Model10}
+model_10<-lm(audience_score~imdb_rating+ critics_score+
+               audience_rating, data=movies2)
+
+summary(model_10)
+```
+Adjusted R2 for model 2 is    0.88, This indicate the  genre has strong effect on audience_score in this model and we should not remove it.
+
+
+#### 11) Removing imdb_rating
+```{r Model11}
+model_11<-lm(audience_score~genre+ critics_score+
+               audience_rating, data=movies2)
+summary(model_11)
+```
+Adjusted R2 for model 2 is 0.807,  This indicate the imdb_ratinghas strong effect on audience_score in this model and we should not remove it.
+
+
+### Therfore our best model is 
+
+```{r Model12}
+model_12<-lm(audience_score~genre+imdb_rating+ critics_score+
+              audience_rating, data=movies2)
+summary(model_12)
+```
+
+Thismodel start with 0.883 and reached to adjusted R2 = 0.884 that show Parsimonius Model with the simplest model and highest predictive power. 
+
+
+
+
+### Model Diagnostics: 
+
+Checking assumption condition include  1) colinearity 2) Linearity 3) variability 4) Independancy
+
+
+#### 1) colinearity
+
+
+```{r colinearity}
+library(PerformanceAnalytics)
+
+movies3<-movies2%>%  select ( runtime,imdb_num_votes, critics_score,
+                             audience_score)
+head(movies3)
+chart.Correlation(movies3)
+```
+
+In this plot, The distribution of each variable is shown on the diagonal. On the bottom of the diagonal : 
+the bivariate scatter plots with a fitted line are displayed, On the top of the diagonal: the value of the 
+correlation plus the significance level as stars Each significance level is associated to a symbol : 
+p-values(0, 0.001, 0.01, 0.05, 0.1, 1) <=> symbols(“***”, “**”, “*”, “.”, " “)
+
+The audience_score have high correlation with critics store that can cause the inaccurancy in the modle due to colinearity.
+
+
+#### 2) Linearity Condition: residuals should randomly scattered
+
+```{r Linearity}
+plot(model_12$residuals~movies2$critics_score,pch=10)
+abline(h=0, col="red", lty="dotted",lwd = 5 )
+```
+I seems residuals are randomly scattered , therfore, these data met the assumption.
+
+
+#### 3) Check for variability
+
+```{r variability}
+plot(model_12$residuals~model_12$fitted.values, pch=10, col="red")
+```
+The assumption condition met because no fan pattern was observed.
+
+
+#### 4) Independent assumption
+```{r Independent}
+plot(model_12$residuals,pch=10, col="gray" )
+abline(h=0, lty="dotted",lwd = 5)
+```
+Residuals are randomly scatter around zero so, its met the assumptions.
+
+
+
+## Part 5: Prediction
+
+Now, based on our model, we want to predict the audience_score in movie "John Wick: Chapter 3 – Parabellum".
+I extracted the data from the websites here snd create a new variable 
+
+
+```{r Prediction}
+audience_score<-87
+genre<-"Action & Adventure"
+imdb_rating<-8
+critics_score<-87
+audience_rating<- "Upright"
+```
+
+Then, we are going to use our model to predict audience score in John Whick movie
+
+
+```{r Predict}
+john_wick<-data.frame(audience_score,genre,imdb_rating,critics_score,audience_rating )
+predict(model_12,john_wick)
+```
+The actual audience_score for movie "John Wick: Chapter 3 – Parabellumis" was 87 and our model predicted audience score of 86.08249 
+that is very close to real score. 
+
+```{r confidence interval}
+predict(model_12,john_wick, interval="confidence")
+```
+
+Based on the confidence interval prediction, We can mention that we are 95% confident that the actual audience_score for
+"John Wick: Chapter 3 – Parabellumis" movie 2019 is between 84.0101 and 88.15488. The model show that the actual value is in this confidence interval
+
+
+
+
+## Part 6: Conclusion
+
+My model works great, and I predicted audience_score for movie "John Wick: Chapter 3 – Parabellumis" correctly and really close to real value.
+I think the model will be more accurate if we add more variables such as "the time of day that movie is on theater", "Grosses", "Nationality of movie" and location of filming.
+
+
+
